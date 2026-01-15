@@ -110,39 +110,42 @@ pipeline {
        /* ------------------------------------------------------
            9. DEPLOY TO KUBERNETS CLUSTER
         ------------------------------------------------------ */
-		stage('Deploy to Kubernetes Cluster') {
+		/* ------------------------------------------------------
+   9. DEPLOY TO KUBERNETS CLUSTER - FIXED VERSION
+------------------------------------------------------ */
+stage('Deploy to Kubernetes Cluster') {
     steps {
         sshPublisher(publishers: [
             sshPublisherDesc(
                 configName: 'kube-master',
+                verbose: true,                    // ← ADDED: Show output
                 transfers: [
-                    // 📁 TRANSFER k8s.yaml
                     sshTransfer(
                         sourceFiles: 'k8s.yaml',
                         remoteDirectory: '/deploy',
                         execTimeout: 60000
                     ),
-                    // 🚀 DEPLOY (Fixed paths!)
-                    sshTransfer(
+                    sshTransfer(                     // ← FULL DEBUG OUTPUT
                         execCommand: """
-echo "=== Deploy Build ${BUILD_NUMBER} ==="
+echo "=== TOMCAT DEPLOY BUILD ${BUILD_NUMBER} ==="
 ls -la /deploy/k8s.yaml
 
-# 1️⃣ Apply manifests (CORRECT PATH)
+# CLEAN SLATE
+kubectl delete deployment,service abc-deploy abc-np-service --ignore-not-found
+
+# APPLY WITH OUTPUT
 kubectl apply -f /deploy/k8s.yaml
 
-# 2️⃣ Update image
-kubectl set image deployment/abc-deploy abc-mvn-container=maithili28/abctechnologies:${BUILD_NUMBER}
-
-# 3️⃣ Rollout status
+# ROLLOUT
 kubectl rollout status deployment/abc-deploy --timeout=300s
 
-# ✅ Verify
-kubectl get pods,svc -l app=abc-mvn-app
+# STATUS
+kubectl get pods,svc,deploy -l app=abc-mvn-app
+kubectl get svc abc-np-service -o wide
 
-echo "=== SUCCESS Build ${BUILD_NUMBER} ==="
+echo "✅ URL: http://NODE_IP:30080 (check NodePort above)"
                         """,
-                        execTimeout: 120000
+                        execTimeout: 300000
                     )
                 ]
             )
