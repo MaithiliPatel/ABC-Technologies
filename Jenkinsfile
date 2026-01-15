@@ -119,17 +119,17 @@ pipeline {
                     // 📁 TRANSFER k8s.yaml
                     sshTransfer(
                         sourceFiles: 'k8s.yaml',
-                        remoteDirectory: '/tmp',
+                        remoteDirectory: '/deploy',
                         execTimeout: 60000
                     ),
                     // 🚀 DEPLOY (Fixed paths!)
                     sshTransfer(
                         execCommand: """
 echo "=== Deploy Build ${BUILD_NUMBER} ==="
-ls -la /tmp/k8s.yaml
+ls -la /deploy/k8s.yaml
 
 # 1️⃣ Apply manifests (CORRECT PATH)
-kubectl apply -f /tmp/k8s.yaml
+kubectl apply -f /deploy/k8s.yaml
 
 # 2️⃣ Update image
 kubectl set image deployment/abc-deploy abc-mvn-container=maithili28/abctechnologies:${BUILD_NUMBER}
