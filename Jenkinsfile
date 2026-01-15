@@ -136,25 +136,28 @@ echo "=== TOMCAT DEPLOY BUILD ${BUILD_NUMBER} ==="
 REMOTE_DIR="/home/kubeadmin/deploy"
 
 echo "✅ Checking file..."
-ls -la \$REMOTE_DIR/k8s.yaml
+ls -la $REMOTE_DIR/k8s.yaml
 
-echo "✅ Replacing BUILD_NUMBER in yaml..."
-cp \$REMOTE_DIR/k8s.yaml \$REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
+echo "✅ Create build YAML..."
+cp $REMOTE_DIR/k8s.yaml $REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
 
-# ✅ Replace the literal ${BUILD_NUMBER} inside yaml
-sed -i 's|\\\${BUILD_NUMBER}|'${BUILD_NUMBER}'|g' \$REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
+echo "✅ Replace BUILD_NUMBER placeholder..."
+sed -i "s|BUILD_NUMBER|${BUILD_NUMBER}|g" $REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
 
-echo "✅ Showing final yaml image line:"
-grep image \$REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml || true
+echo "✅ Confirm image:"
+grep image $REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml || true
 
-echo "✅ CLEAN SLATE"
+echo "✅ Clean old deployment"
 kubectl delete deployment abc-deploy --ignore-not-found=true
 kubectl delete service abc-np-service --ignore-not-found=true
 
-echo "✅ APPLY NEW YAML"
-kubectl apply -f \$REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
+echo "✅ Apply new deployment"
+kubectl apply -f $REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
 
-echo "✅ ROLLOUT STATUS"
+echo "✅ Pods:"
+kubectl get pods -l app=abc-mvn-app -o wide
+
+echo "✅ Rollout status:"
 kubectl rollout status deployment/abc-deploy --timeout=300s
 
 echo "✅ STATUS"
