@@ -31,17 +31,11 @@ pipeline {
 		stage('SonarCloud Scan') {
     steps {
         withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-            sh '''
-                cat sonar-project.properties
-                mvn sonar:sonar \
-                  -Dsonar.login=$SONAR_TOKEN
-            '''
+            sh 'mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN'
         }
     }
 }
 
-
-		
 	    /* ------------------------------------------------------
            4. COPY JAR TO DOCKER & CREATE DOCKER IMAGE
         ------------------------------------------------------ */
