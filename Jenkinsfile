@@ -118,32 +118,48 @@ stage('Deploy to Kubernetes Cluster') {
         sshPublisher(publishers: [
             sshPublisherDesc(
                 configName: 'kube-master',
-                verbose: true,                    // ← ADDED: Show output
+                verbose: true,
                 transfers: [
+                    // Copy k8s.yaml to remote server
                     sshTransfer(
                         sourceFiles: 'k8s.yaml',
                         remoteDirectory: '/deploy',
                         execTimeout: 60000
                     ),
-                    sshTransfer(                     // ← FULL DEBUG OUTPUT
+
+                    // Execute deployment steps remotely
+                    sshTransfer(
                         execCommand: """
 echo "=== TOMCAT DEPLOY BUILD ${BUILD_NUMBER} ==="
+
+echo "✅ Checking file..."
 ls -la /deploy/k8s.yaml
 
-# CLEAN SLATE
-kubectl delete deployment,service abc-deploy abc-np-service --ignore-not-found
+echo "✅ Replacing BUILD_NUMBER in yaml..."
+cp /deploy/k8s.yaml /deploy/k8s-${BUILD_NUMBER}.yaml
+sed -i "s|\\\${BUILD_NUMBER}|${BUILD_NUMBER}|g" /deploy/k8s-${BUILD_NUMBER}.yaml
 
-# APPLY WITH OUTPUT
-kubectl apply -f /deploy/k8s.yaml
+echo "✅ Showing final yaml image line:"
+grep image /deploy/k8s-${BUILD_NUMBER}.yaml || true
 
-# ROLLOUT
+echo "✅ CLEAN SLATE"
+kubectl delete deployment abc-deploy --ignore-not-found=true
+kubectl delete service abc-np-service --ignore-not-found=true
+
+echo "✅ APPLY NEW YAML"
+kubectl apply -f /deploy/k8s-${BUILD_NUMBER}.yaml
+
+echo "✅ ROLLOUT STATUS"
 kubectl rollout status deployment/abc-deploy --timeout=300s
 
-# STATUS
-kubectl get pods,svc,deploy -l app=abc-mvn-app
+echo "✅ STATUS"
+kubectl get pods -o wide
+kubectl get deploy,svc -l app=abc-mvn-app -o wide
+
+echo "✅ NodePort Service:"
 kubectl get svc abc-np-service -o wide
 
-echo "✅ URL: http://NODE_IP:30080 (check NodePort above)"
+echo "✅ DONE"
                         """,
                         execTimeout: 300000
                     )
@@ -152,6 +168,7 @@ echo "✅ URL: http://NODE_IP:30080 (check NodePort above)"
         ])
     }
 }
+
 
 
         /* ------------------------------------------------------
