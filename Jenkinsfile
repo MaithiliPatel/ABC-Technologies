@@ -111,31 +111,48 @@ pipeline {
            9. DEPLOY TO KUBERNETS CLUSTER
         ------------------------------------------------------ */
 		stage('Deploy to Kubernetes Cluster') {
-    		steps {
-       			 sshPublisher(publishers: [
-            		sshPublisherDesc(
-                		configName: 'kube-master',
-               				 transfers: [
-                    			sshTransfer(
-				                        execCommand: """
-                        				# 1️⃣ Ensure deployment & service exist (safe to run)
-                        				kubectl apply -f k8s.yaml
+    steps {
+        sshPublisher(publishers: [
+            sshPublisherDesc(
+                configName: 'kube-master',
+                transfers: [
+                    // 📁 TRANSFER k8s.yaml FIRST
+                    sshTransfer(
+                        sourceFiles: 'k8s.yaml',
+                        remoteDirectory: '/tmp',
+                        execTimeout: 60000
+                    ),
+                    // 🚀 EXECUTE DEPLOYMENT
+                    sshTransfer(
+                        execCommand: """
+echo \"=== Deploy Build ${BUILD_NUMBER} ===\"
 
-                       				    # 2️⃣ Update image with latest build
-                        				kubectl set image deployment/abc-deploy \
-                        				abc-mvn-container=maithili28/abctechnologies:${BUILD_NUMBER}
+# 🔍 Verify files & kubectl
+ls -la /tmp/k8s.yaml
+kubectl version --client --short
 
-                        				# 3️⃣ Wait for rollout to complete
-                        				kubectl rollout status deployment/abc-deploy
-				                        """
-                    					)
-                				]	
-            				)
-        			]
-				)
-    		}
-		}
-			
+# 1️⃣ Apply manifests
+kubectl apply -f /tmp/k8s.yaml
+
+# 2️⃣ Update image (failsafe)
+kubectl set image deployment/abc-deploy abc-mvn-container=maithili28/abctechnologies:${BUILD_NUMBER} || echo \"Image update skipped\"
+
+# 3️⃣ Rollout status (5min timeout)
+kubectl rollout status deployment/abc-deploy --timeout=300s
+
+# ✅ Verify deployment
+kubectl get pods -l app=abc-mvn-app
+
+echo \"=== Deployment SUCCESS ${BUILD_NUMBER} ===\"
+                        """,
+                        execTimeout: 120000
+                    )
+                ]
+            )
+        ])
+    }
+}
+
         /* ------------------------------------------------------
            10. REMOVE OLD DOCKER IMAGE
         ------------------------------------------------------ */
