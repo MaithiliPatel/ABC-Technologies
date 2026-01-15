@@ -26,6 +26,26 @@ pipeline {
         }
 
 
+stage('SonarCloud Scan') {
+    steps {
+        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+            sh '''
+                echo "=== SonarCloud Analysis ==="
+                mvn sonar:sonar \\
+                  -Dsonar.host.url=https://sonarcloud.io \\
+                  -Dsonar.organization=maithilipatel \\
+                  -Dsonar.projectKey=MaithiliPatel_ABC-Technologies \\
+                  -Dsonar.sources=src/main/java \\
+                  -Dsonar.tests=src/test/java \\
+                  -Dsonar.test.inclusions=**/*Test.java,**/*Tests.java,**/Test*.java \\
+                  -Dsonar.token=$SONAR_TOKEN
+            '''
+        }
+    }
+}
+
+		
+
 	    /* ------------------------------------------------------
            4. COPY JAR TO DOCKER & CREATE DOCKER IMAGE
         ------------------------------------------------------ */
