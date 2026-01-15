@@ -38,7 +38,7 @@ pipeline {
                   -Dsonar.organization=maithilipatel \
                   -Dsonar.projectKey=MaithiliPatel_ABC-Technologies \
                   -Dsonar.sources=. \
-                  -Dsonar.login=$SONAR_TOKEN
+                  -Dsonar.token=$SONAR_TOKEN
             '''
         }
     }
