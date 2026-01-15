@@ -126,7 +126,7 @@ pipeline {
                     sshTransfer(
 				                        execCommand: """
                         				# 1️⃣ Ensure deployment & service exist (safe to run)
-                        				kubectl apply -f k8sdeploy.yaml
+                        				kubectl apply -f k8s.yaml
 
                        				    # 2️⃣ Update image with latest build
                         				kubectl set image deployment/abc-deploy \
