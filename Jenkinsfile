@@ -29,20 +29,17 @@ pipeline {
            3. SONARCLOUD SCAN
         ------------------------------------------------------ */
 		stage('SonarCloud Scan') {
-   			steps {
-       			 withSonarQubeEnv('sonarcloud') {
-          			  withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-               			 sh '''
-                    		echo "Using sonar-project.properties:"
-                   			cat sonar-project.properties
-                    		mvn sonar:sonar \
-                      		-Dsonar.login=$SONAR_TOKEN \
-                      		-Dsonar.properties=./sonar-project.properties
-               			 '''
-           			 }
-       			 }
-   			 }
-		}
+    steps {
+        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+            sh '''
+                cat sonar-project.properties
+                mvn sonar:sonar \
+                  -Dsonar.login=$SONAR_TOKEN
+            '''
+        }
+    }
+}
+
 
 		
 	    /* ------------------------------------------------------
