@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: tomcat
-        image: maithili28/abctechnologies:${BUILD_NUMBER}
+        image: maithili28/abctechnologies:BUILD_NUMBER
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080	
