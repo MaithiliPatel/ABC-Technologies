@@ -136,23 +136,23 @@ echo "=== TOMCAT DEPLOY BUILD ${BUILD_NUMBER} ==="
 REMOTE_DIR="/home/kubeadmin/deploy"
 
 echo "✅ Checking file..."
-ls -la $REMOTE_DIR/k8s.yaml
+ls -la \$REMOTE_DIR/k8s.yaml
 
 echo "✅ Create build YAML..."
-cp $REMOTE_DIR/k8s.yaml $REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
+cp \$REMOTE_DIR/k8s.yaml \$REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
 
 echo "✅ Replace BUILD_NUMBER placeholder..."
-sed -i "s|BUILD_NUMBER|${BUILD_NUMBER}|g" $REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
+sed -i "s|BUILD_NUMBER|${BUILD_NUMBER}|g" \$REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
 
 echo "✅ Confirm image:"
-grep image $REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml || true
+grep image \$REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml || true
 
 echo "✅ Clean old deployment"
 kubectl delete deployment abc-deploy --ignore-not-found=true
 kubectl delete service abc-np-service --ignore-not-found=true
 
 echo "✅ Apply new deployment"
-kubectl apply -f $REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
+kubectl apply -f \$REMOTE_DIR/k8s-${BUILD_NUMBER}.yaml
 
 echo "✅ Pods:"
 kubectl get pods -l app=abc-mvn-app -o wide
@@ -168,7 +168,8 @@ echo "✅ NodePort Service:"
 kubectl get svc abc-np-service -o wide
 
 echo "✅ DONE"
-                        """,
+""",
+
                         execTimeout: 300000
                     )
                 ]
