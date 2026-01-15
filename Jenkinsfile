@@ -25,26 +25,27 @@ pipeline {
             }
         }
 
-
-stage('SonarCloud Scan') {
-    steps {
-        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-            sh '''
-                echo "=== SonarCloud Analysis ==="
-                mvn sonar:sonar \\
-                  -Dsonar.host.url=https://sonarcloud.io \\
-                  -Dsonar.organization=maithilipatel \\
-                  -Dsonar.projectKey=MaithiliPatel_ABC-Technologies \\
-                  -Dsonar.sources=src/main/java \\
-                  -Dsonar.tests=src/test/java \\
-                  -Dsonar.test.inclusions=**/*Test.java,**/*Tests.java,**/Test*.java \\
-                  -Dsonar.token=$SONAR_TOKEN
-            '''
-        }
-    }
-}
-
 		
+		/* ------------------------------------------------------
+           3. SONARCLOUD SCAN
+        ------------------------------------------------------ */
+        stage('SonarCloud Scan') {
+  			  steps {
+      			  withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+          			  sh '''
+             			   echo "=== SonarCloud Analysis ==="
+               			   mvn sonar:sonar \\
+                  		   -Dsonar.host.url=https://sonarcloud.io \\
+               			   -Dsonar.organization=maithilipatel \\
+               			   -Dsonar.projectKey=MaithiliPatel_ABC-Technologies \\
+              			   -Dsonar.sources=src/main/java \\
+              			   -Dsonar.tests=src/test/java \\
+               			   -Dsonar.test.inclusions=**/*Test.java,**/*Tests.java,**/Test*.java \\
+                		   -Dsonar.token=$SONAR_TOKEN
+         				   '''
+      			  }
+   			 }
+		}
 
 	    /* ------------------------------------------------------
            4. COPY JAR TO DOCKER & CREATE DOCKER IMAGE
@@ -92,7 +93,64 @@ stage('SonarCloud Scan') {
                sh "docker push maithili28/abctechnologies:${BUILD_NUMBER}"
             }
         }
-		
+		/* ------------------------------------------------------
+           8. APPROVED DEPLOYMENT TO KUBERNETE CLUSTER
+        ------------------------------------------------------ */
+        stage('Approve - Deployment to Kubernete Cluster') {
+            steps {
+                
+				//----------------send an approval prompt-------------
+                script {
+                   env.APPROVED_DEPLOY = input message: 'User input required Choose "yes" | "Abort"'
+                       }
+                //-----------------end approval prompt------------
+            }
+        }
+
+       /* ------------------------------------------------------
+           9. DEPLOY TO KUBERNETS CLUSTER
+        ------------------------------------------------------ */
+		stage('Deploy to Kubernetes Cluster') {
+    		steps {
+       			 sshPublisher(publishers: [
+            		sshPublisherDesc(
+                		configName: 'kube-master',
+               				 transfers: [
+                    			sshTransfer(
+				                        execCommand: """
+                        				# 1️⃣ Ensure deployment & service exist (safe to run)
+                        				kubectl apply -f k8sdeploy.yaml
+
+                       				    # 2️⃣ Update image with latest build
+                        				kubectl set image deployment/abc-deploy \
+                        				abc-mvn-container=maithili28/abctechnologies:${BUILD_NUMBER}
+
+                        				# 3️⃣ Wait for rollout to complete
+                        				kubectl rollout status deployment/abc-deploy
+				                        """
+                    					)
+                				]	
+            				)
+        			]
+				)
+    		}
+		}
+			
+        /* ------------------------------------------------------
+           10. REMOVE OLD DOCKER IMAGE
+        ------------------------------------------------------ */
+		stage('Docker Cleanup (Keep Latest Build)') {
+			steps {
+				sh '''
+					echo "Keeping image: maithili28/abctechnologies:${BUILD_NUMBER}"
+					docker images maithili28/abctechnologies --format "{{.Tag}}" \
+					| grep -v "^${BUILD_NUMBER}$" \
+					| xargs -r -I {} docker rmi maithili28/abctechnologies:{}
+				'''
+			}
+		}
+    }
+}
 
     }
 }
