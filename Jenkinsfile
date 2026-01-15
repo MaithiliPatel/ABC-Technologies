@@ -116,31 +116,40 @@ pipeline {
             sshPublisherDesc(
                 configName: 'kube-master',
                 transfers: [
-                    // 📁 TRANSFER k8s.yaml FIRST
+                    // 📁 TRANSFER k8s.yaml
                     sshTransfer(
                         sourceFiles: 'k8s.yaml',
                         remoteDirectory: '/tmp',
                         execTimeout: 60000
                     ),
-                    // 🚀 EXECUTE DEPLOYMENT
+                    // 🚀 DEPLOY (Fixed paths!)
                     sshTransfer(
-				                        execCommand: """
-                        				# 1️⃣ Ensure deployment & service exist (safe to run)
-                        				kubectl apply -f k8s.yaml
+                        execCommand: """
+echo "=== Deploy Build ${BUILD_NUMBER} ==="
+ls -la /tmp/k8s.yaml
 
-                       				    # 2️⃣ Update image with latest build
-                        				kubectl set image deployment/abc-deploy \
-                        				abc-mvn-container=maithili28/abctechnologies:${BUILD_NUMBER}
+# 1️⃣ Apply manifests (CORRECT PATH)
+kubectl apply -f /tmp/k8s.yaml
 
-                        				# 3️⃣ Wait for rollout to complete
-                        				kubectl rollout status deployment/abc-deploy
-				                        """
-                    					)
+# 2️⃣ Update image
+kubectl set image deployment/abc-deploy abc-mvn-container=maithili28/abctechnologies:${BUILD_NUMBER}
+
+# 3️⃣ Rollout status
+kubectl rollout status deployment/abc-deploy --timeout=300s
+
+# ✅ Verify
+kubectl get pods,svc -l app=abc-mvn-app
+
+echo "=== SUCCESS Build ${BUILD_NUMBER} ==="
+                        """,
+                        execTimeout: 120000
+                    )
                 ]
             )
         ])
     }
 }
+
 
         /* ------------------------------------------------------
            10. REMOVE OLD DOCKER IMAGE
