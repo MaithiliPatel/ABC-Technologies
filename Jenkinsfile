@@ -32,7 +32,7 @@ pipeline {
         stage('Docker Image Build') {
             steps {
                sh 'docker version'
-				sh "docker build -t maithili28/ABC-Technologies:${BUILD_NUMBER} ."
+				sh "docker build -t maithili28/abctechnologies:${BUILD_NUMBER} ."
 				sh 'docker image list'
             }
         }
@@ -69,7 +69,7 @@ pipeline {
         ------------------------------------------------------ */
         stage('Push Docker Image to Docker Hub') {
             steps {
-               sh "docker push maithili28/ABC-Technologies:${BUILD_NUMBER}"
+               sh "docker push maithili28/abctechnologies:${BUILD_NUMBER}"
             }
         }
 		
