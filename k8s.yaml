@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: abc-deploy
   labels:
-    app: abc-deploy-mvn-app
+    app: abc-mvn-app
 spec:
   replicas: 3
   selector:
