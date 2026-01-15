@@ -29,12 +29,21 @@ pipeline {
            3. SONARCLOUD SCAN
         ------------------------------------------------------ */
 		stage('SonarCloud Scan') {
-			steps {
-				withSonarQubeEnv('sonarcloud') {
-				  sh 'mvn sonar:sonar'
-				}
-			}
+   			steps {
+       			 withSonarQubeEnv('sonarcloud') {
+          			  withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+               			 sh '''
+                    		echo "Using sonar-project.properties:"
+                   			cat sonar-project.properties
+                    		mvn sonar:sonar \
+                      		-Dsonar.login=$SONAR_TOKEN \
+                      		-Dsonar.properties=./sonar-project.properties
+               			 '''
+           			 }
+       			 }
+   			 }
 		}
+
 		
 	    /* ------------------------------------------------------
            4. COPY JAR TO DOCKER & CREATE DOCKER IMAGE
