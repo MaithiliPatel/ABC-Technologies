@@ -15,7 +15,7 @@ spec:
         app: abc-mvn-app
     spec:
       containers:
-      - name: abc-mvn-container
+      - name: tomcat
         image: maithili28/abctechnologies:${BUILD_NUMBER}
         imagePullPolicy: IfNotPresent
         ports:
