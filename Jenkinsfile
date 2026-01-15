@@ -137,7 +137,8 @@ ls -la /deploy/k8s.yaml
 
 echo "✅ Replacing BUILD_NUMBER in yaml..."
 cp /deploy/k8s.yaml /deploy/k8s-${BUILD_NUMBER}.yaml
-sed -i "s|\\\${BUILD_NUMBER}|${BUILD_NUMBER}|g" /deploy/k8s-${BUILD_NUMBER}.yaml
+
+sed -i 's|\${BUILD_NUMBER}|'${BUILD_NUMBER}'|g' /deploy/k8s-${BUILD_NUMBER}.yaml
 
 echo "✅ Showing final yaml image line:"
 grep image /deploy/k8s-${BUILD_NUMBER}.yaml || true
@@ -148,6 +149,7 @@ kubectl delete service abc-np-service --ignore-not-found=true
 
 echo "✅ APPLY NEW YAML"
 kubectl apply -f /deploy/k8s-${BUILD_NUMBER}.yaml
+
 
 echo "✅ ROLLOUT STATUS"
 kubectl rollout status deployment/abc-deploy --timeout=300s
